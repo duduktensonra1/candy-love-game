@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Candy Love Game</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background: url("arka.png") no-repeat center center fixed;
+      background-size: cover;
+      overflow: hidden;
+    }
+    #hud {
+      text-align: center;
+      margin: 10px;
+      font-size: 22px;
+      font-weight: bold;
+      color: #fff;
+      text-shadow: 0 0 5px #000;
+    }
+    canvas {
+      background: transparent;
+      display: block;
+      margin: 0 auto;
+    }
+    #shop {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.6);
+      padding: 10px;
+      border-radius: 15px;
+      display: flex;
+      gap: 15px;
+    }
+    .item {
+      text-align: center;
+      color: #fff;
+      font-size: 14px;
+    }
+    .item img {
+      width: 50px;
+      height: 50px;
+      border-radius: 10px;
+      display: block;
+      margin-bottom: 5px;
+      cursor: pointer;
+      border: 2px solid #fff;
+    }
+    .item button {
+      background: #ff69b4;
+      border: none;
+      border-radius: 10px;
+      padding: 5px 10px;
+      color: white;
+      cursor: pointer;
+    }
+    .item button:disabled {
+      background: gray;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <div id="hud">Puan: <span id="score">0</span></div>
+  <canvas id="gameCanvas" width="400" height="600"></canvas>
+
+  <!-- Market -->
+  <div id="shop">
+    <div class="item">
+      <img src="urun1.png" alt="Ürün 1">
+      <button onclick="buyUpgrade('hiz', 100)">Hız (100)</button>
+    </div>
+    <div class="item">
+      <img src="urun2.png" alt="Ürün 2">
+      <button onclick="buyUpgrade('kalkan', 150)">Kalkan (150)</button>
+    </div>
+    <div class="item">
+      <img src="urun3.png" alt="Ürün 3">
+      <button onclick="buyUpgrade('cicek', 200)">Çiçek (200)</button>
+    </div>
+    <div class="item">
+      <img src="urun4.png" alt="Ürün 4">
+      <button onclick="buyUpgrade('sarma', 250)">Sarma (250)</button>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    let score = 0;
+    let player = { x: 200, y: 500, size: 50, speed: 5 };
+    let candies = [];
+
+    const upgrades = { hiz: false, kalkan: false, cicek: false, sarma: false };
+
+    const playerImg = new Image();
+    playerImg.src = "sevgilim.png";
+
+    function spawnCandy() {
+      const types = [
+        { src: "elmas.png", value: 30 },
+        { src: "kalp.png", value: 20 },
+        { src: "altin.png", value: 10 }
+      ];
+      const chosen = types[Math.floor(Math.random() * types.length)];
+      const candyImg = new Image();
+      candyImg.src = chosen.src;
+      candies.push({
+        img: candyImg,
+        x: Math.random() * (canvas.width - 30),
+        y: -30,
+        size: 30,
+        value: chosen.value
+      });
+    }
+
+    function drawPlayer() {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, player.size / 2, 0, Math.PI * 2);
+      ctx.closePath();
+      ctx.clip();
+      ctx.drawImage(playerImg, player.x - player.size / 2, player.y - player.size / 2, player.size, player.size);
+      ctx.restore();
+
+      if (upgrades.cicek) {
+        ctx.strokeStyle = "pink";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, player.size, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
+
+    function drawCandies() {
+      candies.forEach(c => ctx.drawImage(c.img, c.x, c.y, c.size, c.size));
+    }
+
+    function update() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      candies.forEach(c => c.y += 3);
+
+      candies = candies.filter(c => {
+        const dx = c.x + c.size/2 - player.x;
+        const dy = c.y + c.size/2 - player.y;
+        if (Math.hypot(dx, dy) < c.size/2 + player.size/2) {
+          score += c.value;
+          document.getElementById("score").textContent = score;
+          return false;
+        }
+        return c.y < canvas.height;
+      });
+
+      drawPlayer();
+      drawCandies();
+      requestAnimationFrame(update);
+    }
+
+    setInterval(spawnCandy, 1200);
+    update();
+
+    document.addEventListener("keydown", e => {
+      let speed = upgrades.sarma ? player.speed * 1.5 : player.speed;
+      if (e.key === "ArrowLeft" && player.x - player.size/2 > 0) player.x -= speed;
+      if (e.key === "ArrowRight" && player.x + player.size/2 < canvas.width) player.x += speed;
+    });
+
+    function buyUpgrade(type, cost) {
+      if (score >= cost && !upgrades[type]) {
+        score -= cost;
+        document.getElementById("score").textContent = score;
+        upgrades[type] = true;
+        alert(type + " satın alındı!");
+      }
+    }
+  </script>
+</body>
+</html>
